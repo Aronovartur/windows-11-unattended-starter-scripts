@@ -371,3 +371,30 @@ choco install github-desktop -y
 #install gsudo for elevating privileges
 
 choco install gsudo -y
+
+
+#enable "open in terminal" contextual menu
+
+# Define the registry key path
+$registryPath = "HKCR:\Directory\Background\shell\OpenInTerminal"
+
+# Define the command to launch Windows Terminal
+$command = "wt.exe"
+
+# Create the registry key for the context menu option
+New-Item -Path $registryPath -Force
+
+# Set the display name for the context menu option
+Set-ItemProperty -Path $registryPath -Name "MUIVerb" -Value "Open this folder in terminal"
+
+# Create the command key for the context menu option
+New-Item -Path "$registryPath\command" -Force
+
+# Set the command to launch Windows Terminal in administrator mode (modify the command as needed)
+Set-ItemProperty -Path "$registryPath\command" -Name "(Default)" -Value "$command"
+
+Write-Host "The 'Open this folder in terminal' option has been added to the right-click menu."
+
+# Refresh the shell to apply the changes
+Stop-Process -Name explorer -Force
+Start-Process explorer
