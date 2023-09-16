@@ -356,3 +356,15 @@ Write-Host "SSH key pair generated at $sshKeyPath"
 Start-Service ssh-agent
 ssh-add $sshKeyPath
 Write-Host "SSH private key added to the SSH agent"
+
+
+# Reinstall windows terminal
+get-appxpackage Microsoft.WindowsTerminal -allusers | Foreach {Add-AppxPackage -DisableDevelopmentMode -Register "$($_.InstallLocation)\AppXManifest.xml"}
+
+# Install composer package manager
+
+choco install composer -y
+
+#install github desktop
+
+choco install github-desktop -y
