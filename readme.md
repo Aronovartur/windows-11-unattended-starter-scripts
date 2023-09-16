@@ -4,4 +4,5 @@ before you can run this script you need to enable scripts in windows:
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned
 
 
-you must run this using powershell in admin mode. the script removes windows terminal emulator app. 
+you must run this using powershell in admin mode. the script removes windows terminal emulator app as part of cleanup but adds it back on later.
+
