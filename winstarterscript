@@ -1,0 +1,355 @@
+#this script installs several applications on first windows install and also runs a few cleanup tasks.
+
+
+# debloat windows
+$AppXApps = @(
+
+        #Unnecessary Windows 10 AppX Apps
+        "*Microsoft.BingNews*"
+        "*Microsoft.GetHelp*"
+        "*Microsoft.Getstarted*"
+        "*Microsoft.Messaging*"
+        "*Microsoft.Microsoft3DViewer*"
+        "*Microsoft.MicrosoftOfficeHub*"
+        "*Microsoft.MicrosoftSolitaireCollection*"
+        "*Microsoft.NetworkSpeedTest*"
+        "*Microsoft.Office.Sway*"
+        "*Microsoft.OneConnect*"
+        "*Microsoft.People*"
+        "*Microsoft.Print3D*"
+        "*Microsoft.SkypeApp*"
+        "*Microsoft.WindowsAlarms*"
+        "*Microsoft.WindowsCamera*"
+        "*microsoft.windowscommunicationsapps*"
+        "*Microsoft.WindowsFeedbackHub*"
+        "*Microsoft.WindowsMaps*"
+        "*Microsoft.WindowsSoundRecorder*"
+        "*Microsoft.Xbox.TCUI*"
+        "*Microsoft.XboxApp*"
+        "*Microsoft.XboxGameOverlay*"
+        "*Microsoft.XboxIdentityProvider*"
+        "*Microsoft.XboxSpeechToTextOverlay*"
+        "*Microsoft.ZuneMusic*"
+        "*Microsoft.ZuneVideo*"
+
+        #Sponsored Windows 10 AppX Apps
+        #Add sponsored/featured apps to remove in the "*AppName*" format
+        "*EclipseManager*"
+        "*ActiproSoftwareLLC*"
+        "*AdobeSystemsIncorporated.AdobePhotoshopExpress*"
+        "*Duolingo-LearnLanguagesforFree*"
+        "*PandoraMediaInc*"
+        "*CandyCrush*"
+        "*Wunderlist*"
+        "*Flipboard*"
+        "*Twitter*"
+        "*Facebook*"
+        "*Spotify*"
+
+        #Optional: Typically not removed but you can if you need to for some reason
+        #"*Microsoft.Advertising.Xaml_10.1712.5.0_x64__8wekyb3d8bbwe*"
+        #"*Microsoft.Advertising.Xaml_10.1712.5.0_x86__8wekyb3d8bbwe*"
+        #"*Microsoft.BingWeather*"
+        #"*Microsoft.MSPaint*"
+        #"*Microsoft.MicrosoftStickyNotes*"
+        #"*Microsoft.Windows.Photos*"
+        #"*Microsoft.WindowsCalculator*"
+        #"*Microsoft.WindowsStore*"
+    )
+    foreach ($App in $AppXApps) {
+        Write-Verbose -Message ('Removing Package {0}' -f $App)
+        Get-AppxPackage -Name $App | Remove-AppxPackage -ErrorAction SilentlyContinue
+        Get-AppxPackage -Name $App -AllUsers | Remove-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+        Get-AppxProvisionedPackage -Online | Where-Object DisplayName -like $App | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue
+    }
+    
+    #Removes AppxPackages
+    #Credit to /u/GavinEke for a modified version of my whitelist code
+    [regex]$WhitelistedApps = 'Microsoft.Paint3D|Microsoft.WindowsCalculator|Microsoft.WindowsStore|Microsoft.Windows.Photos|CanonicalGroupLimited.UbuntuonWindows|Microsoft.XboxGameCallableUI|Microsoft.XboxGamingOverlay|Microsoft.Xbox.TCUI|Microsoft.XboxGamingOverlay|Microsoft.XboxIdentityProvider|Microsoft.MicrosoftStickyNotes|Microsoft.MSPaint*'
+    Get-AppxPackage -AllUsers | Where-Object {$_.Name -NotMatch $WhitelistedApps} | Remove-AppxPackage
+    Get-AppxPackage | Where-Object {$_.Name -NotMatch $WhitelistedApps} | Remove-AppxPackage
+    Get-AppxProvisionedPackage -Online | Where-Object {$_.PackageName -NotMatch $WhitelistedApps} | Remove-AppxProvisionedPackage -Online# Define a list of apps to be uninstalled
+$AppsToRemove = @(
+    "Microsoft.3DBuilder"
+    "Microsoft.BingWeather"
+    "Microsoft.Getstarted"
+    "Microsoft.MicrosoftOfficeHub"
+    "Microsoft.MicrosoftSolitaireCollection"
+    "Microsoft.Office.OneNote"
+    "Microsoft.OneConnect"
+    "Microsoft.People"
+    "Microsoft.SkypeApp"
+    "Microsoft.Windows.Photos"
+    "Microsoft.WindowsAlarms"
+    "Microsoft.WindowsCalculator"
+    "Microsoft.WindowsCamera"
+    "Microsoft.WindowsMaps"
+    "Microsoft.WindowsPhone"
+    "Microsoft.WindowsSoundRecorder"
+    "Microsoft.XboxApp"
+    "Microsoft.ZuneMusic"
+    "Microsoft.ZuneVideo"
+)
+
+# Uninstall specified apps
+ForEach ($App in $AppsToRemove) {
+    Get-AppxPackage -Name $App -AllUsers | Remove-AppxPackage
+}
+
+# Disable and stop unwanted services
+$ServicesToDisable = @(
+    "wuauserv"  # Windows Update
+    "wercplsupport"  # Windows Error Reporting Service
+    "DoSvc"  # Delivery Optimization
+)
+
+ForEach ($Service in $ServicesToDisable) {
+    Stop-Service -Name $Service -Force
+    Set-Service -Name $Service -StartupType Disabled
+}
+
+#Disables Windows Feedback Experience
+    Write-Output "Disabling Windows Feedback Experience program"
+    $Advertising = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo"
+    If (Test-Path $Advertising) {
+        Set-ItemProperty $Advertising Enabled -Value 0 
+    }
+            
+    #Stops Cortana from being used as part of your Windows Search Function
+    Write-Output "Stopping Cortana from being used as part of your Windows Search Function"
+    $Search = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+    If (Test-Path $Search) {
+        Set-ItemProperty $Search AllowCortana -Value 0 
+    }
+
+    #Disables Web Search in Start Menu
+    Write-Output "Disabling Bing Search in Start Menu"
+    $WebSearch = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+    Set-ItemProperty "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" BingSearchEnabled -Value 0 
+	If (!(Test-Path $WebSearch)) {
+        New-Item $WebSearch
+	}
+	Set-ItemProperty $WebSearch DisableWebSearch -Value 1 
+            
+    #Stops the Windows Feedback Experience from sending anonymous data
+    Write-Output "Stopping the Windows Feedback Experience program"
+    $Period = "HKCU:\Software\Microsoft\Siuf\Rules"
+    If (!(Test-Path $Period)) { 
+        New-Item $Period
+    }
+    Set-ItemProperty $Period PeriodInNanoSeconds -Value 0 
+
+    #Prevents bloatware applications from returning and removes Start Menu suggestions               
+    Write-Output "Adding Registry key to prevent bloatware apps from returning"
+    $registryPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"
+    $registryOEM = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+    If (!(Test-Path $registryPath)) { 
+        New-Item $registryPath
+    }
+    Set-ItemProperty $registryPath DisableWindowsConsumerFeatures -Value 1 
+
+    If (!(Test-Path $registryOEM)) {
+        New-Item $registryOEM
+    }
+        Set-ItemProperty $registryOEM  ContentDeliveryAllowed -Value 0 
+        Set-ItemProperty $registryOEM  OemPreInstalledAppsEnabled -Value 0 
+        Set-ItemProperty $registryOEM  PreInstalledAppsEnabled -Value 0 
+        Set-ItemProperty $registryOEM  PreInstalledAppsEverEnabled -Value 0 
+        Set-ItemProperty $registryOEM  SilentInstalledAppsEnabled -Value 0 
+        Set-ItemProperty $registryOEM  SystemPaneSuggestionsEnabled -Value 0          
+    
+    #Preping mixed Reality Portal for removal    
+    Write-Output "Setting Mixed Reality Portal value to 0 so that you can uninstall it in Settings"
+    $Holo = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Holographic"    
+    If (Test-Path $Holo) {
+        Set-ItemProperty $Holo  FirstRunSucceeded -Value 0 
+    }
+
+    #Disables Wi-fi Sense
+    Write-Output "Disabling Wi-Fi Sense"
+    $WifiSense1 = "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowWiFiHotSpotReporting"
+    $WifiSense2 = "HKLM:\SOFTWARE\Microsoft\PolicyManager\default\WiFi\AllowAutoConnectToWiFiSenseHotspots"
+    $WifiSense3 = "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config"
+    If (!(Test-Path $WifiSense1)) {
+	    New-Item $WifiSense1
+    }
+    Set-ItemProperty $WifiSense1  Value -Value 0 
+	If (!(Test-Path $WifiSense2)) {
+	    New-Item $WifiSense2
+    }
+    Set-ItemProperty $WifiSense2  Value -Value 0 
+	Set-ItemProperty $WifiSense3  AutoConnectAllowedOEM -Value 0 
+        
+    #Disables live tiles
+    Write-Output "Disabling live tiles"
+    $Live = "HKCU:\SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications"    
+    If (!(Test-Path $Live)) {      
+        New-Item $Live
+    }
+    Set-ItemProperty $Live  NoTileApplicationNotification -Value 1 
+        
+    #Turns off Data Collection via the AllowTelemtry key by changing it to 0
+    Write-Output "Turning off Data Collection"
+    $DataCollection1 = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection"
+    $DataCollection2 = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection"
+    $DataCollection3 = "HKLM:\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\DataCollection"    
+    If (Test-Path $DataCollection1) {
+        Set-ItemProperty $DataCollection1  AllowTelemetry -Value 0 
+    }
+    If (Test-Path $DataCollection2) {
+        Set-ItemProperty $DataCollection2  AllowTelemetry -Value 0 
+    }
+    If (Test-Path $DataCollection3) {
+        Set-ItemProperty $DataCollection3  AllowTelemetry -Value 0 
+    }
+    
+    #Disabling Location Tracking
+    Write-Output "Disabling Location Tracking"
+    $SensorState = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Sensor\Overrides\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}"
+    $LocationConfig = "HKLM:\SYSTEM\CurrentControlSet\Services\lfsvc\Service\Configuration"
+    If (!(Test-Path $SensorState)) {
+        New-Item $SensorState
+    }
+    Set-ItemProperty $SensorState SensorPermissionState -Value 0 
+    If (!(Test-Path $LocationConfig)) {
+        New-Item $LocationConfig
+    }
+    Set-ItemProperty $LocationConfig Status -Value 0 
+        
+    #Disables People icon on Taskbar
+    Write-Output "Disabling People icon on Taskbar"
+    $People = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\People"    
+    If (!(Test-Path $People)) {
+        New-Item $People
+    }
+    Set-ItemProperty $People  PeopleBand -Value 0 
+        
+    #Disables scheduled tasks that are considered unnecessary 
+    Write-Output "Disabling scheduled tasks"
+    Get-ScheduledTask  XblGameSaveTaskLogon | Disable-ScheduledTask
+    Get-ScheduledTask  XblGameSaveTask | Disable-ScheduledTask
+    Get-ScheduledTask  Consolidator | Disable-ScheduledTask
+    Get-ScheduledTask  UsbCeip | Disable-ScheduledTask
+    Get-ScheduledTask  DmClient | Disable-ScheduledTask
+    Get-ScheduledTask  DmClientOnScenarioDownload | Disable-ScheduledTask
+    
+    Write-Output "Stopping and disabling WAP Push Service"
+    #Stop and disable WAP Push Service
+	Stop-Service "dmwappushservice"
+	Set-Service "dmwappushservice" -StartupType Disabled
+
+    Write-Output "Stopping and disabling Diagnostics Tracking Service"
+    #Disabling the Diagnostics Tracking Service
+	Stop-Service "DiagTrack"
+	Set-Service "DiagTrack" -StartupType Disabled
+
+# Remove scheduled tasks (example: disable Windows Defender)
+Unregister-ScheduledTask -TaskName "\Microsoft\Windows\Windows Defender\Windows Defender Cache Maintenance"
+
+Write-Host "Windows 10 debloating complete. Restart your computer for changes to take effect."
+
+# Disable telemetry (requires administrative privileges)
+if (-not ([System.Security.Principal.WindowsPrincipal][System.Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([System.Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Write-Host "Please run this script with administrative privileges."
+    exit
+}
+
+# Disable telemetry
+Write-Host "Disabling Windows telemetry..."
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" -Name "AllowTelemetry" -Value 0 -Force
+Write-Host "Windows telemetry has been disabled."
+
+# Uninstall Cortana (may not work on all Windows 10 versions)
+Write-Host "Uninstalling Cortana..."
+Get-AppxPackage -Name Microsoft.549981C3F5F10 | Remove-AppxPackage
+Write-Host "Cortana has been uninstalled."
+
+# Disable the Windows Store
+Write-Host "Disabling the Windows Store..."
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\WindowsStore" -Name "RemoveWindowsStore" -Value 1 -Force
+Write-Host "The Windows Store has been disabled."
+
+Write-Host "Changes have been made. Restart your computer for the changes to take effect."
+
+
+##Chocolatey
+
+# Check if Chocolatey is already installed
+if (-Not (Test-Path 'C:\ProgramData\chocolatey\choco.exe')) {
+    # Install Chocolatey
+    Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+    # Check if Chocolatey installation was successful
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Chocolatey has been successfully installed."
+    }
+    else {
+        Write-Host "Error: Chocolatey installation failed."
+        exit 1
+    }
+}
+else {
+    Write-Host "Chocolatey is already installed."
+}
+# Enable Windows Subsystem for Linux (WSL)
+wsl --install
+
+# Install Steam using Chocolatey
+choco install steam -y
+
+# Install Docker using Chocolatey
+choco install docker-desktop -y
+
+# Install Notepad++ using Chocolatey
+choco install notepadplusplus -y
+
+# Install FileZilla using Chocolatey
+choco install filezilla -y
+
+# Install JetBrains Toolbox using Chocolatey
+choco install jetbrainstoolbox -y
+
+# Install Visual Studio Code (VSCode) using Chocolatey
+choco install vscode -y
+
+# Install Git using Chocolatey
+choco install git -y
+
+# Install qBittorrent using Chocolatey
+choco install qbittorrent -y
+
+# Install Private Internet Access (PIA) using Chocolatey
+choco install privateinternetaccess -y
+
+
+# Install GIMP using Chocolatey
+choco install gimp -y
+# Install PHP using Chocolatey
+choco install php --version 7.4 -y
+
+# Install Python using Chocolatey
+choco install python -y
+
+# Install Java Development Kit (JDK) using Chocolatey
+choco install openjdk -y
+
+# Install OpenSSH and OpenSSL using Chocolatey
+choco install openssh openssl -y
+
+# Create a directory for SSH keys if it doesn't exist
+if (-not (Test-Path -Path "$env:USERPROFILE\.ssh")) {
+    New-Item -Path "$env:USERPROFILE\.ssh" -ItemType Directory
+}
+
+# Generate an SSH key pair (if it doesn't already exist)
+$sshKeyPath = "$env:USERPROFILE\.ssh\id_rsa"
+if (-not (Test-Path -Path $sshKeyPath)) {
+    ssh-keygen -t rsa -b 2048 -f $sshKeyPath -N ""
+}
+
+Write-Host "SSH key pair generated at $sshKeyPath"
+
+# Add SSH key to the SSH agent (optional)
+Start-Service ssh-agent
+ssh-add $sshKeyPath
+Write-Host "SSH private key added to the SSH agent"
