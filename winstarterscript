@@ -315,6 +315,9 @@ choco install vscode -y
 # Install Git using Chocolatey
 choco install git -y
 
+#Install Anki
+choco install anki --version=2.1.7
+
 # Install qBittorrent using Chocolatey
 choco install qbittorrent -y
 
