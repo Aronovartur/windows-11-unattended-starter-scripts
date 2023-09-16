@@ -368,3 +368,6 @@ choco install composer -y
 #install github desktop
 
 choco install github-desktop -y
+#install gsudo for elevating privileges
+
+choco install gsudo -y
