@@ -1,5 +1,6 @@
 #this script installs several applications on first windows install and also runs a few cleanup tasks.
-
+#suppress some errors  
+$ErrorActionPreference = 'SilentlyContinue'
 
 # debloat windows
 $AppXApps = @(
@@ -324,6 +325,20 @@ choco install qbittorrent -y
 # Install Private Internet Access (PIA) using Chocolatey
 choco install privateinternetaccess -y
 
+# Install OnlyOffice
+choco install onlyoffice -y
+
+# Install Slack
+choco install slack -y
+
+# Install Telegram
+choco install telegram -y
+
+# Install WhatsApp (unofficial package)
+choco install whatsapp -y --ignore-checksums
+
+# Install Insomnia REST Client
+choco install insomnia-rest-api-client -y
 
 # Install GIMP using Chocolatey
 choco install gimp -y
