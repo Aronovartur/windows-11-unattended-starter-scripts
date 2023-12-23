@@ -1,4 +1,4 @@
-This scripts runs any time i have a fresh installation of windows. it installs my usual tech stack and removes windows bloatware. 
+This scripts runs any time i have a fresh installation of Windows 11 Pro. it installs my usual tech stack and removes windows bloatware. 
 
 before you can run this script you need to enable scripts in windows, this command will allow you to run all scripts, unsigned and otherwise: 
 Set-ExecutionPolicy -ExecutionPolicy Unrestricted
