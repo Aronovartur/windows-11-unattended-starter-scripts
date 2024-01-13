@@ -328,6 +328,9 @@ choco install privateinternetaccess -y
 # Install OnlyOffice
 choco install onlyoffice -y
 
+# Install 7zip
+choco install 7zip
+
 # Install Slack
 choco install slack -y
 
