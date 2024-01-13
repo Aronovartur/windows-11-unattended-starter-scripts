@@ -337,6 +337,9 @@ choco install slack -y
 # Install Telegram
 choco install telegram -y
 
+# Install Nodejs
+choco install nodejs
+
 # Install WhatsApp (unofficial package)
 choco install whatsapp -y --ignore-checksums
 
