@@ -331,6 +331,9 @@ choco install onlyoffice -y
 # Install 7zip
 choco install 7zip
 
+# Install VLC
+choco install vlc
+
 # Install Slack
 choco install slack -y
 
