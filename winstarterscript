@@ -329,10 +329,10 @@ choco install privateinternetaccess -y
 choco install onlyoffice -y
 
 # Install 7zip
-choco install 7zip
+choco install 7zip -y
 
 # Install VLC
-choco install vlc
+choco install vlc -y
 
 # Install Slack
 choco install slack -y
@@ -341,10 +341,7 @@ choco install slack -y
 choco install telegram -y
 
 # Install Nodejs
-choco install nodejs
-
-# Install WhatsApp (unofficial package)
-choco install whatsapp -y --ignore-checksums
+choco install nodejs -y
 
 # Install Insomnia REST Client
 choco install insomnia-rest-api-client -y
